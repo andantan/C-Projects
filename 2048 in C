@@ -1,0 +1,1343 @@
+//////////////////////2048 GAME//////////////////////
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+//DEFINE CONSTANTS
+#define TRUE 1
+#define FALSE 0
+#define MAX 16
+
+//DECLARE FUNCTIONS
+/********** SETTINGS **********/
+void Setting();
+void Randomset();
+void Showset();
+void Playstyle();
+/********* FINISHING *********/
+void Gameover();
+void Search2048();
+/********* CONTROLS *********/
+int Controlset();
+void CASEUP();
+void CASEDOWN();
+void CASERIGHT();	
+void CASELEFT();	
+/********* IMPORT FILE *********/
+void ReadFILE_SCORE();
+void WriteFILE_SCORE();
+void ReadFILE_DATA();
+void WriteFILE_DATA();
+void ResetFILE_ALL();
+
+//GLOBAL VARIABLES
+int SET[MAX / 4][MAX / 4];		
+int boolean = TRUE;
+int count;
+int score;
+int score_best = 0;
+
+int main()
+{
+	int control;
+	
+	Playstyle();
+	
+	do
+	{
+		system("cls");		//debug: insert "//"
+
+		Showset();
+		control = Controlset();
+
+		switch (control)
+		{
+		case 2:		//↓
+			CASEDOWN();
+			Search2048();
+			Randomset();
+
+			count++;
+
+			break;
+		case 4:		//←
+			CASELEFT();
+			Search2048();
+			Randomset();
+
+			count++;
+
+			break;
+		case 6:		//→
+			CASERIGHT();
+			Search2048();
+			Randomset();
+
+			count++;
+
+			break;
+		case 8:		//↑
+			CASEUP();
+			Search2048();
+			Randomset();
+
+			count++;
+
+			break;
+		case 999:
+			boolean = FALSE;
+
+			WriteFILE_DATA();
+			WriteFILE_SCORE();
+
+			printf("SYSTEM IS CLOSED BY USER\n");
+
+			break;
+		default:
+			break;
+		}
+	} while (boolean);
+
+	return 0;
+}
+
+void Playstyle()
+{
+	int TYPE;
+	int boolean_TYPE = TRUE;
+
+	do
+	{
+		printf("WELCOME 2048 GAME!\n");
+		printf("RESTART: 1\n");
+		printf("CONTINUE: 2\n");
+		printf("RESET ALL DATA: 3\n");
+		printf("PRESS: ");
+		scanf_s("%d", &TYPE);
+
+		if (1 <= TYPE && TYPE <= 3)
+			boolean_TYPE = FALSE;
+	} while (boolean_TYPE);		//RESTART OR CONTINUE
+
+	if (TYPE == 1)
+	{
+		Setting();		//initialize all index to 0
+		Randomset();		//first random initialize
+
+		ReadFILE_SCORE();
+	}
+
+	if (TYPE == 2)
+	{
+		ReadFILE_DATA();
+		ReadFILE_SCORE();
+	}
+
+	if (TYPE == 3)
+	{
+		ResetFILE_ALL();
+
+		Setting();
+		Randomset();
+	}
+}
+
+
+void Setting()
+{
+	int i, j;
+
+	count = 0;
+	score = 0;
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		for (j = 0; j < MAX / 4; j++)
+		{
+			SET[i][j] = 0;
+		}
+	}
+}
+
+void Randomset()		//Insert 2 in random SET (SET[i][j] == 0)
+{
+	int * SET_ptr[MAX];
+	int i, j;
+	int index_zero = 0;
+	int * pick;
+	int pause = FALSE;
+
+	srand((size_t)time(NULL));
+
+	for (i = 0; i < MAX; i++)
+		SET_ptr[i] = NULL;		//initialize
+
+	for (i = 0; i < 4; i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			if (SET[i][j] == 0)
+			{
+				SET_ptr[index_zero] = &SET[i][j];
+				index_zero++;
+			}
+		}
+	}		//Insert SET array memory address (SET[i][j] == 0)
+
+	if (index_zero == 0)
+	{
+		pause = TRUE;
+
+		Gameover();
+	}
+
+	if (!pause)
+	{
+		pick = SET_ptr[rand() % index_zero];	// range(index_zero)
+		*pick = 2;
+	}
+
+	/******************************************************/
+	/*int index_x, index_y;
+	int check = FALSE;
+
+	srand((size_t)time(NULL));
+
+	do
+	{
+		index_x = rand() % 4;
+		index_y = rand() % 4;
+
+		if (SET[index_x][index_y] != 0)
+			check = TRUE;
+	} while (check);
+
+	SET[index_x][index_y] = 2;
+	count++;*/
+	/******************************************************/
+}
+
+void Gameover()
+{
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	int n = 0;
+	int TRY;
+	int type = FALSE;
+	int out = TRUE;
+
+	for (i = 0; i < 3; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			if (SET[i][j] == SET[i][j + 1] || SET[i][j] == SET[i + 1][j])
+				break;
+		}
+	}
+
+	if (i == 3 && j == 3)
+	{
+		for (k = 0; k < 3; k++)
+		{
+			if (SET[k][3] == SET[k + 1][3])
+				break;
+		}
+	}
+
+	if (k == 3)
+	{
+		for (n = 0; n < 3; n++)
+		{
+			if (SET[3][n] == SET[3][n + 1])
+				break;
+		}
+	}
+
+	if (n == 3)
+	{
+		printf("Game over!\n");
+
+		WriteFILE_SCORE();
+
+		do
+		{
+			printf("PRESS 1 TO RETRY(EXIT: 0):");
+			scanf_s("%d", &TRY);
+
+			if (TRY == 1 || TRY == 0)
+			{
+				out = FALSE;
+
+				if (TRY == 0)
+				{
+					boolean = FALSE;
+
+					return;
+				}
+
+				if (TRY == 1)
+				{
+					Setting();
+
+					return;
+				}
+			}
+			else
+				printf("PRESS 0 OR 1\n");
+		} while (out);
+	}
+}
+
+void Showset()		//show SET & SCORE, COUNT
+{
+	int i, j;
+
+	printf("============ 2048 ===========\n");
+	printf("========= SCORE : %d =========\n", score);
+	printf("========= COUNT : %d =========\n", count);
+	printf("======= BEST SCORE : %d ======\n\n", score_best);
+
+	for (i = 0; i < 4; i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			printf(" %4d  ", SET[i][j]);
+		}
+		printf("\n\n");
+	}
+
+	printf("==============================\n");
+}
+
+int Controlset()		//input UP, DOWN, RIGHT, LEFT by keyboard
+{
+	int input_key;
+	int debug = TRUE;
+
+	do
+	{
+		printf("MOVING [↓: 2, ←: 4, →: 6, ↑: 8]\n");
+		printf("EXIT(999)\n");
+		printf("CHOICE : ");
+		scanf_s("%d", &input_key);
+
+		if (input_key == 999)
+			return 999;
+
+		if (input_key < 10 && input_key % 2 == 0)
+		{
+			if (input_key > 0)
+				debug = FALSE;
+			else
+				printf("\nENTER 2 4 6 8\n\n");
+		}
+		else
+			printf("\nENTER 2 4 6 8\n\n");
+	} while (debug);
+
+	return input_key;
+}
+
+void CASEDOWN()
+{
+	int SET_SUB[MAX / 4];
+	int i, j;
+	int type;
+	int type01, type12, type23;
+	int count_SET;
+	int count_SET2;
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		count_SET = 0;
+		count_SET2 = 0;
+
+		for (j = 0; j < MAX / 4; j++)
+		{
+			if (SET[j][i] != 0)
+			{
+				SET_SUB[count_SET] = SET[j][i];
+				count_SET++;
+			}
+		}
+
+		type = FALSE;
+		type01 = FALSE;
+		type12 = FALSE;	
+		type23 = FALSE;
+
+		switch (count_SET)
+		{
+		case 0:
+			break;
+		case 1:
+			SET[0][i] = 0;
+			SET[1][i] = 0;
+			SET[2][i] = 0;
+			SET[3][i] = SET_SUB[0];
+
+			break;
+		case 2:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				SET[0][i] = 0;
+				SET[1][i] = 0;
+				SET[2][i] = 0;
+				SET[3][i] = SET_SUB[0] * 2;
+
+				score += SET_SUB[0] * 2;
+			}
+
+			else
+			{
+				SET[0][i] = 0;
+				SET[1][i] = 0;
+				SET[2][i] = SET_SUB[0];
+				SET[3][i] = SET_SUB[1];
+			}
+
+			break;
+		case 3:
+			if (SET_SUB[1] == SET_SUB[2] && !type)
+			{
+				SET[0][i] = 0;
+				SET[1][i] = 0;
+				SET[2][i] = SET_SUB[0];
+				SET[3][i] = SET_SUB[1] * 2;
+
+				score += SET_SUB[1] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[1] && !type)
+			{
+				SET[0][i] = 0;
+				SET[1][i] = 0;
+				SET[2][i] = SET_SUB[0] * 2;
+				SET[3][i] = SET_SUB[2];
+
+				score += SET_SUB[0] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[2] && !type)
+			{
+				SET[0][i] = 0;
+				SET[1][i] = SET_SUB[0];
+				SET[2][i] = SET_SUB[1];
+				SET[3][i] = SET_SUB[2];
+
+				type = TRUE;
+			}
+
+			if (!type)
+			{
+				SET[0][i] = 0;
+				SET[1][i] = SET_SUB[0];
+				SET[2][i] = SET_SUB[1];
+				SET[3][i] = SET_SUB[2];
+			}
+
+			break;
+		case 4:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				count_SET2++;
+				type01 = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2])
+			{
+				count_SET2++;
+				type12 = TRUE;
+			}
+
+			if (SET_SUB[2] == SET_SUB[3])
+			{
+				count_SET2++;
+				type23 = TRUE;
+			}
+
+			switch (count_SET2)
+			{
+			case 0:
+				break;
+			case 1:
+				if (type01)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = SET_SUB[0] * 2;
+					SET[2][i] = SET_SUB[2];
+					SET[3][i] = SET_SUB[3];
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = SET_SUB[0];
+					SET[2][i] = SET_SUB[1] * 2;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type23)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = SET_SUB[0];
+					SET[2][i] = SET_SUB[1];
+					SET[3][i] = SET_SUB[2] * 2;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 2:
+				if (type01 && type12)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = SET_SUB[0];
+					SET[2][i] = SET_SUB[1] * 2;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type12 && type23)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = SET_SUB[0];
+					SET[2][i] = SET_SUB[1];
+					SET[3][i] = SET_SUB[2] * 2;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				if (type01 && type23)
+				{
+					SET[0][i] = 0;
+					SET[1][i] = 0;
+					SET[2][i] = SET_SUB[0] * 2;
+					SET[3][i] = SET_SUB[2] * 2;
+
+					score += SET_SUB[0] * 2;
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 3:
+				SET[0][i] = 0;
+				SET[1][i] = 0;
+				SET[2][i] = SET_SUB[0] * 2;
+				SET[3][i] = SET_SUB[2] * 2;
+
+				score += SET_SUB[0] * 2;
+				score += SET_SUB[2] * 2;
+
+				break;
+			default:
+				break;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void CASELEFT()
+{
+	int SET_SUB[MAX / 4];
+	int i, j;
+	int type;
+	int type01, type12, type23;
+	int count_SET;
+	int count_SET2;
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		count_SET = 0;
+		count_SET2 = 0;
+
+		for (j = 0; j < MAX / 4; j++)
+		{
+			if (SET[i][j] != 0)
+			{
+				SET_SUB[count_SET] = SET[i][j];
+				count_SET++;
+			}
+		}
+
+		type = FALSE;
+		type01 = FALSE;
+		type12 = FALSE;
+		type23 = FALSE;
+
+		switch (count_SET)
+		{
+		case 0:
+			break;
+		case 1:
+			SET[i][0] = SET_SUB[0];
+			SET[i][1] = 0;
+			SET[i][2] = 0;
+			SET[i][3] = 0;
+
+			break;
+		case 2:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				SET[i][0] = SET_SUB[0] * 2;
+				SET[i][1] = 0;
+				SET[i][2] = 0;
+				SET[i][3] = 0;
+
+				score += SET_SUB[0] * 2;
+			}
+
+			else
+			{
+				SET[i][0] = SET_SUB[0];
+				SET[i][1] = SET_SUB[1];
+				SET[i][2] = 0;
+				SET[i][3] = 0;
+			}
+
+			break;
+		case 3:
+			if (SET_SUB[0] == SET_SUB[1] && !type)
+			{
+				SET[i][0] = SET_SUB[0] * 2;
+				SET[i][1] = SET_SUB[2];
+				SET[i][2] = 0;
+				SET[i][3] = 0;
+
+				score += SET_SUB[0] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2] && !type)
+			{
+				SET[i][0] = SET_SUB[0];
+				SET[i][1] = SET_SUB[1] * 2;
+				SET[i][2] = 0;
+				SET[i][3] = 0;
+
+				score += SET_SUB[1] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[2] && !type)
+			{
+				SET[i][0] = SET_SUB[0];
+				SET[i][1] = SET_SUB[1];
+				SET[i][2] = SET_SUB[2];
+				SET[i][3] = 0;
+
+				type = TRUE;
+			}
+
+			if (!type)
+			{
+				SET[i][0] = SET_SUB[0];
+				SET[i][1] = SET_SUB[1];
+				SET[i][2] = SET_SUB[2];
+				SET[i][3] = 0;
+			}
+
+			break;
+		case 4:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				count_SET2++;
+				type01 = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2])
+			{
+				count_SET2++;
+				type12 = TRUE;
+			}
+
+			if (SET_SUB[2] == SET_SUB[3])
+			{
+				count_SET2++;
+				type23 = TRUE;
+			}
+
+			switch (count_SET2)
+			{
+			case 0:
+				break;
+			case 1:
+				if (type01)
+				{
+					SET[i][0] = SET_SUB[0] * 2;
+					SET[i][1] = SET_SUB[2];
+					SET[i][2] = SET_SUB[3];
+					SET[i][3] = 0;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12)
+				{
+					SET[i][1] = SET_SUB[1] * 2;
+					SET[i][2] = SET_SUB[3];
+					SET[i][3] = 0;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type23)
+				{
+					SET[i][2] = SET_SUB[2] * 2;
+					SET[i][3] = 0;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 2:
+				if (type01 && type12)
+				{
+					SET[i][0] = SET_SUB[0] * 2;
+					SET[i][1] = SET_SUB[2];
+					SET[i][2] = SET_SUB[3];
+					SET[i][3] = 0;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12 && type23)
+				{
+					SET[i][1] = SET_SUB[0] * 2;
+					SET[i][2] = SET_SUB[3];
+					SET[i][3] = 0;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type01 && type23)
+				{
+					SET[i][0] = SET_SUB[0] * 2;
+					SET[i][1] = SET_SUB[2] * 2;
+					SET[i][2] = 0;
+					SET[i][3] = 0;
+
+					score += SET_SUB[0] * 2;
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 3:
+				SET[i][0] = SET_SUB[0] * 2;
+				SET[i][1] = SET_SUB[2] * 2;
+				SET[i][2] = 0;
+				SET[i][3] = 0;
+
+				score += SET_SUB[0] * 2;
+				score += SET_SUB[2] * 2;
+
+				break;
+			default:
+				break;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void CASERIGHT()
+{
+	int SET_SUB[MAX / 4];
+	int i, j;
+	int type;
+	int type01, type12, type23;
+	int count_SET;
+	int count_SET2;
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		count_SET = 0;
+		count_SET2 = 0;
+
+		for (j = 0; j < MAX / 4; j++)
+		{
+			if (SET[i][j] != 0)
+			{
+				SET_SUB[count_SET] = SET[i][j];
+				count_SET++;
+			}
+		}
+
+		type = FALSE;
+		type01 = FALSE;
+		type12 = FALSE;
+		type23 = FALSE;
+
+		switch (count_SET)
+		{
+		case 0:
+			break;
+		case 1:
+			SET[i][0] = 0;
+			SET[i][1] = 0;
+			SET[i][2] = 0;
+			SET[i][3] = SET_SUB[0];
+
+			break;
+		case 2:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				SET[i][0] = 0;
+				SET[i][1] = 0;
+				SET[i][2] = 0;
+				SET[i][3] = SET_SUB[0] * 2;
+
+				score += SET_SUB[0] * 2;
+			}
+
+			else
+			{
+				SET[i][0] = 0;
+				SET[i][1] = 0;
+				SET[i][2] = SET_SUB[0];
+				SET[i][3] = SET_SUB[1];
+			}
+
+			break;
+		case 3:
+			if (SET_SUB[1] == SET_SUB[2] && !type)
+			{
+				SET[i][0] = 0;
+				SET[i][1] = 0;
+				SET[i][2] = SET_SUB[0];
+				SET[i][3] = SET_SUB[1] * 2;
+
+				score += SET_SUB[1] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[1] && !type)
+			{
+				SET[i][0] = 0;
+				SET[i][1] = 0;
+				SET[i][2] = SET_SUB[0] * 2;
+				SET[i][3] = SET_SUB[2];
+
+				score += SET_SUB[0] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[2] && !type)
+			{
+				SET[i][0] = 0;
+				SET[i][1] = SET_SUB[0];
+				SET[i][2] = SET_SUB[1];
+				SET[i][3] = SET_SUB[2];
+
+				type = TRUE;
+			}
+
+			if (!type)
+			{
+				SET[i][0] = 0;
+				SET[i][1] = SET_SUB[0];
+				SET[i][2] = SET_SUB[1];
+				SET[i][3] = SET_SUB[2];
+			}
+
+			break;
+		case 4:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				count_SET2++;
+				type01 = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2])
+			{
+				count_SET2++;
+				type12 = TRUE;
+			}
+
+			if (SET_SUB[2] == SET_SUB[3])
+			{
+				count_SET2++;
+				type23 = TRUE;
+			}
+
+			switch (count_SET2)
+			{
+			case 0:
+				break;
+			case 1:
+				if (type01)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = SET_SUB[0] * 2;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = SET_SUB[0];
+					SET[i][2] = SET_SUB[1] * 2;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type23)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = SET_SUB[0];
+					SET[i][2] = SET_SUB[1];
+					SET[i][3] = SET_SUB[2] * 2;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 2:
+				if (type01 && type12)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = SET_SUB[0];
+					SET[i][2] = SET_SUB[1] * 2;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type12 && type23)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = SET_SUB[0];
+					SET[i][2] = SET_SUB[1];
+					SET[i][3] = SET_SUB[2] * 2;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				if (type01 && type23)
+				{
+					SET[i][0] = 0;
+					SET[i][1] = 0;
+					SET[i][2] = SET_SUB[0] * 2;
+					SET[i][3] = SET_SUB[2] * 2;
+
+					score += SET_SUB[0] * 2;
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 3:
+				SET[i][0] = 0;
+				SET[i][1] = 0;
+				SET[i][2] = SET_SUB[0] * 2;
+				SET[i][3] = SET_SUB[2] * 2;
+
+				score += SET_SUB[0] * 2;
+				score += SET_SUB[2] * 2;
+
+				break;
+			default:
+				break;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void CASEUP()
+{
+	int SET_SUB[MAX / 4];
+	int i, j;
+	int type;
+	int type01, type12, type23;
+	int count_SET;
+	int count_SET2;
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		count_SET = 0;
+		count_SET2 = 0;	
+
+		for (j = 0; j < MAX / 4; j++)
+		{
+			if (SET[j][i] != 0)
+			{
+				SET_SUB[count_SET] = SET[j][i]; 
+				count_SET++;
+			}
+		}
+
+		type = FALSE;
+		type01 = FALSE;
+		type12 = FALSE;
+		type23 = FALSE;
+
+		switch (count_SET)
+		{
+		case 0:
+			break;
+		case 1:
+			SET[0][i] = SET_SUB[0];
+			SET[1][i] = 0;
+			SET[2][i] = 0;
+			SET[3][i] = 0;
+
+			break;
+		case 2:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				SET[0][i] = SET_SUB[0] * 2;
+				SET[1][i] = 0;
+				SET[2][i] = 0;
+				SET[3][i] = 0;
+
+				score += SET_SUB[0] * 2;
+			}
+
+			else
+			{
+				SET[0][i] = SET_SUB[0];
+				SET[1][i] = SET_SUB[1];
+				SET[2][i] = 0;
+				SET[3][i] = 0;
+			}
+
+			break;
+		case 3:
+			if (SET_SUB[0] == SET_SUB[1] && !type)
+			{
+				SET[0][i] = SET_SUB[0] * 2;
+				SET[1][i] = SET_SUB[2];
+				SET[2][i] = 0;
+				SET[3][i] = 0;
+
+				score += SET_SUB[0] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2] && !type)
+			{
+				SET[1][i] = SET_SUB[1] * 2;
+				SET[2][i] = 0;
+				SET[3][i] = 0;
+
+				score += SET_SUB[1] * 2;
+
+				type = TRUE;
+			}
+
+			if (SET_SUB[0] == SET_SUB[2] && !type) 
+			{
+				SET[0][i] = SET_SUB[0];
+				SET[1][i] = SET_SUB[1];
+				SET[2][i] = SET_SUB[2];
+				SET[3][i] = 0;
+
+				type = TRUE;
+			}
+
+			if (!type)
+			{
+				SET[0][i] = SET_SUB[0];
+				SET[1][i] = SET_SUB[1];
+				SET[2][i] = SET_SUB[2];
+				SET[3][i] = 0;
+			}
+			
+			break;
+		case 4:
+			if (SET_SUB[0] == SET_SUB[1])
+			{
+				count_SET2++;
+				type01 = TRUE;
+			}
+
+			if (SET_SUB[1] == SET_SUB[2])
+			{
+				count_SET2++;
+				type12 = TRUE;
+			}
+
+			if (SET_SUB[2] == SET_SUB[3])
+			{
+				count_SET2++;
+				type23 = TRUE;
+			}
+
+			switch (count_SET2)
+			{
+			case 0:
+				break;
+			case 1:
+				if (type01)
+				{
+					SET[0][i] = SET_SUB[0] * 2;
+					SET[1][i] = SET_SUB[2];
+					SET[2][i] = SET_SUB[3];
+					SET[3][i] = 0;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12)
+				{
+					SET[1][i] = SET_SUB[1] * 2;
+					SET[2][i] = SET_SUB[3];
+					SET[3][i] = 0;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type23)
+				{
+					SET[2][i] = SET_SUB[2] * 2;
+					SET[3][i] = 0;
+
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 2:
+				if (type01 && type12)
+				{
+					SET[0][i] = SET_SUB[0] * 2;
+					SET[1][i] = SET_SUB[2];
+					SET[2][i] = SET_SUB[3];
+					SET[3][i] = 0;
+
+					score += SET_SUB[0] * 2;
+				}
+
+				if (type12 && type23)
+				{
+					SET[1][i] = SET_SUB[1] * 2;
+					SET[2][i] = SET_SUB[3];
+					SET[3][i] = 0;
+
+					score += SET_SUB[1] * 2;
+				}
+
+				if (type01 && type23)
+				{
+					SET[0][i] = SET_SUB[0] * 2;
+					SET[1][i] = SET_SUB[2] * 2;
+					SET[2][i] = 0;
+					SET[3][i] = 0;
+
+					score += SET_SUB[0] * 2;
+					score += SET_SUB[2] * 2;
+				}
+
+				break;
+			case 3:
+				SET[0][i] = SET_SUB[0] * 2;
+				SET[1][i] = SET_SUB[2] * 2;
+				SET[2][i] = 0;
+				SET[3][i] = 0;
+
+				score += SET_SUB[0] * 2;
+				score += SET_SUB[2] * 2;
+
+				break;
+			default:
+				break;
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void Search2048()
+{
+	int i, j;
+	int TRY;
+	int out = TRUE;
+
+	//system("cls");
+
+	for (i = 0; i < MAX / 4; i++)
+	{
+		for (j = 0; j < MAX / 4; j++)
+		{
+			if (SET[i][j] == 2048)
+			{
+				Showset();
+
+				printf("YOU MADE 2048\n");
+
+				do
+				{
+					printf("PRESS 1 TO RETRY(EXIT: 0):");
+					scanf_s("%d", &TRY);
+
+					if (TRY == 1 || TRY == 0)
+					{
+						out = FALSE;
+
+						if (TRY == 0)
+						{
+							boolean = FALSE;
+
+							return;
+						}
+
+						if (TRY == 1)
+						{
+							Setting();
+
+							return;
+						}
+					}
+					else
+						printf("PRESS 0 OR 1\n");
+				} while (out);
+			}
+
+			//if (!out)
+			//	break;
+		}
+
+		//if (!out)
+		//	break;
+	}
+}
+
+void ReadFILE_SCORE()
+{
+	FILE * fp_score;
+
+	fopen_s(&fp_score, "2048-score.txt", "rt");
+
+	if (fp_score == NULL)
+	{
+		printf("FILE OPEN ERROR\n");
+
+		return;
+	}
+
+	fscanf_s(fp_score, "%d", &score_best);
+
+	fclose(fp_score);
+}
+
+void WriteFILE_SCORE()
+{
+	if (score_best <= score)
+	{
+		FILE * fp_score;
+		
+		fopen_s(&fp_score, "2048-score.txt", "wt");
+
+		fprintf_s(fp_score, "%d", score);
+
+		fclose(fp_score);
+	}
+}
+
+void ReadFILE_DATA()
+{
+	int i, j;
+
+	FILE * fp_data;
+
+	fopen_s(&fp_data, "2048-data.txt", "rt");
+
+	if (fp_data == NULL)
+	{
+		printf("FILE OPEN ERROR\n");
+		
+		return;
+	}
+
+	fscanf_s(fp_data, "%d %d", &score, &count);
+
+	for (i = 0; i < 4; i++)
+	{
+		fscanf_s(fp_data, "%d %d %d %d", &SET[i][0], &SET[i][1], &SET[i][2], &SET[i][3]);
+	}
+
+	for (i = 0; i < 4; i++)
+	{
+		for (j = 0; j < 4; j++)
+		{
+			if (SET[i][j] != 0)
+				break;
+		}
+	}
+
+	if (i == 4 && j == 4)
+	{
+		Setting();
+		Randomset();
+	}
+
+	fclose(fp_data);
+}
+
+void WriteFILE_DATA()
+{
+	int i;
+
+	FILE * fp_data;
+
+	fopen_s(&fp_data, "2048-data.txt", "wt");
+
+	fprintf(fp_data, "%d %d\n", score, count);
+
+	for (i = 0; i < 4; i++)
+	{
+		fprintf(fp_data, "%d %d %d %d\n", SET[i][0], SET[i][1], SET[i][2], SET[i][3]);
+	}
+
+	fclose(fp_data);
+}
+
+void ResetFILE_ALL()
+{
+	int i;
+
+	FILE * fp_score;
+	FILE * fp_data;
+
+	fopen_s(&fp_score, "2048-score.txt", "wt");
+
+	fprintf(fp_score, "%d", FALSE);
+
+	fclose(fp_score);
+
+	fopen_s(&fp_data, "2048-data.txt", "wt");
+
+	fprintf(fp_data, "%d %d\n", FALSE, FALSE);
+
+	for (i = 0; i < 4; i++)
+	{
+		fprintf(fp_data, "%d %d %d %d\n", FALSE, FALSE, FALSE, FALSE);
+	}
+
+	fclose(fp_data);
+}
